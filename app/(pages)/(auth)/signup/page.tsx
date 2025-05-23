@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { createBrowserClient } from '@supabase/ssr';
+import { motion } from 'framer-motion';
 
 // Client component that contains all the state and logic
 const SignUpForm = () => {
@@ -17,7 +18,7 @@ const SignUpForm = () => {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('info');
-  
+
   const router = useRouter();
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,20 +32,20 @@ const SignUpForm = () => {
         setShowToast(false);
         router.push('/signin');
       }, 4000);
-      
+
       return () => clearTimeout(timer);
     } else if (showToast) {
       const timer = setTimeout(() => {
         setShowToast(false);
       }, 4000);
-      
+
       return () => clearTimeout(timer);
     }
   }, [showToast, toastType, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Basic validation
     if (password !== confirmPassword) {
       setToastType('error');
@@ -53,7 +54,7 @@ const SignUpForm = () => {
       setError('Passwords do not match');
       return;
     }
-    
+
     if (password.length < 6) {
       setToastType('error');
       setToastMessage('Password must be at least 6 characters');
@@ -61,7 +62,7 @@ const SignUpForm = () => {
       setError('Password must be at least 6 characters');
       return;
     }
-    
+
     setLoading(true);
     setError('');
 
@@ -104,52 +105,64 @@ const SignUpForm = () => {
     <>
       {/* Toast notification */}
       {showToast && (
-        <div className={`fixed top-5 right-5 p-4 rounded shadow-lg z-50 ${
-          toastType === 'success' ? 'bg-green-100 border-l-4 border-green-500 text-green-700' : 
-          toastType === 'error' ? 'bg-red-100 border-l-4 border-red-500 text-red-700' :
-          'bg-blue-100 border-l-4 border-blue-500 text-blue-700'
-        }`}>
-          <div className="flex">
-            <div className="flex-shrink-0">
+        <motion.div
+          className={`fixed top-5 right-5 p-4 rounded-lg shadow-xl z-50 ${toastType === 'success' ? 'bg-green-600 text-white' :
+              toastType === 'error' ? 'bg-red-600 text-white' :
+                'bg-blue-600 text-white'
+            }`}
+          initial={{ opacity: 0, y: -50, x: 50 }}
+          animate={{ opacity: 1, y: 0, x: 0 }}
+          exit={{ opacity: 0, y: -50, x: 50 }}
+        >
+          <div className="flex items-center">
+            <div className="flex-shrink-0 mr-3">
               {toastType === 'success' && (
-                <svg className="h-5 w-5 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
               )}
               {toastType === 'error' && (
-                <svg className="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
               )}
               {toastType === 'info' && (
-                <svg className="h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
                 </svg>
               )}
             </div>
-            <div className="ml-3">
-              <p className="text-sm">{toastMessage}</p>
-            </div>
-            <button onClick={() => setShowToast(false)} className="ml-auto pl-3">
-              <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <p className="text-sm font-medium">{toastMessage}</p>
+            <button onClick={() => setShowToast(false)} className="ml-4 text-white hover:text-gray-200">
+              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
             </button>
           </div>
-        </div>
+        </motion.div>
       )}
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+      <motion.div
+        className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <div className="bg-gray-800 py-8 px-4 shadow-xl rounded-2xl border border-gray-700 sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+              <motion.div
+                className="bg-red-900/50 border border-red-500 text-red-300 px-4 py-3 rounded-lg relative"
+                role="alert"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
                 <span className="block sm:inline">{error}</span>
-              </div>
+              </motion.div>
             )}
-            
+
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300">
                 Email address
               </label>
               <div className="mt-1">
@@ -161,13 +174,14 @@ const SignUpForm = () => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black sm:text-sm text-black"
+                  className="appearance-none block w-full px-3 py-3 border border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 sm:text-sm bg-gray-700 text-white"
+                  placeholder="Enter your email"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300">
                 Password
               </label>
               <div className="mt-1">
@@ -179,13 +193,14 @@ const SignUpForm = () => {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black sm:text-sm text-black"
+                  className="appearance-none block w-full px-3 py-3 border border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 sm:text-sm bg-gray-700 text-white"
+                  placeholder="Enter your password"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-300">
                 Confirm Password
               </label>
               <div className="mt-1">
@@ -197,80 +212,135 @@ const SignUpForm = () => {
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black sm:text-sm text-black"
+                  className="appearance-none block w-full px-3 py-3 border border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 sm:text-sm bg-gray-700 text-white"
+                  placeholder="Confirm your password"
                 />
               </div>
             </div>
 
+            <div className="flex items-center">
+              <input
+                id="terms"
+                name="terms"
+                type="checkbox"
+                required
+                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-600 rounded bg-gray-700"
+              />
+              <label htmlFor="terms" className="ml-2 block text-sm text-gray-300">
+                I agree to the{' '}
+                <a href="#" className="text-green-400 hover:text-green-300">
+                  Terms of Service
+                </a>{' '}
+                and{' '}
+                <a href="#" className="text-green-400 hover:text-green-300">
+                  Privacy Policy
+                </a>
+              </label>
+            </div>
+
             <div>
-              <button
+              <motion.button
                 type="submit"
                 disabled={loading}
-                onClick={() => !loading && setShowToast(false)}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                whileHover={{ scale: loading ? 1 : 1.02 }}
+                whileTap={{ scale: loading ? 1 : 0.98 }}
               >
-                {loading ? 'Creating account...' : 'Sign up'}
-              </button>
+                {loading ? (
+                  <div className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creating account...
+                  </div>
+                ) : 'Create account'}
+              </motion.button>
             </div>
           </form>
 
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
+                <div className="w-full border-t border-gray-600"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                <span className="px-2 bg-gray-800 text-gray-400">Or continue with</span>
               </div>
             </div>
 
             <div className="mt-6">
-              <button
+              <motion.button
                 onClick={handleGoogleSignIn}
-                className="w-full flex justify-center items-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                className="w-full flex justify-center items-center py-3 px-4 border border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
                   <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">
-                    <path fill="#4285F4" d="M -3.264 51.509 C -3.264 50.719 -3.334 49.969 -3.454 49.239 L -14.754 49.239 L -14.754 53.749 L -8.284 53.749 C -8.574 55.229 -9.424 56.479 -10.684 57.329 L -10.684 60.329 L -6.824 60.329 C -4.564 58.239 -3.264 55.159 -3.264 51.509 Z"/>
-                    <path fill="#34A853" d="M -14.754 63.239 C -11.514 63.239 -8.804 62.159 -6.824 60.329 L -10.684 57.329 C -11.764 58.049 -13.134 58.489 -14.754 58.489 C -17.884 58.489 -20.534 56.379 -21.484 53.529 L -25.464 53.529 L -25.464 56.619 C -23.494 60.539 -19.444 63.239 -14.754 63.239 Z"/>
-                    <path fill="#FBBC05" d="M -21.484 53.529 C -21.734 52.809 -21.864 52.039 -21.864 51.239 C -21.864 50.439 -21.724 49.669 -21.484 48.949 L -21.484 45.859 L -25.464 45.859 C -26.284 47.479 -26.754 49.299 -26.754 51.239 C -26.754 53.179 -26.284 54.999 -25.464 56.619 L -21.484 53.529 Z"/>
-                    <path fill="#EA4335" d="M -14.754 43.989 C -12.984 43.989 -11.404 44.599 -10.154 45.789 L -6.734 42.369 C -8.804 40.429 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z"/>
+                    <path fill="#4285F4" d="M -3.264 51.509 C -3.264 50.719 -3.334 49.969 -3.454 49.239 L -14.754 49.239 L -14.754 53.749 L -8.284 53.749 C -8.574 55.229 -9.424 56.479 -10.684 57.329 L -10.684 60.329 L -6.824 60.329 C -4.564 58.239 -3.264 55.159 -3.264 51.509 Z" />
+                    <path fill="#34A853" d="M -14.754 63.239 C -11.514 63.239 -8.804 62.159 -6.824 60.329 L -10.684 57.329 C -11.764 58.049 -13.134 58.489 -14.754 58.489 C -17.884 58.489 -20.534 56.379 -21.484 53.529 L -25.464 53.529 L -25.464 56.619 C -23.494 60.539 -19.444 63.239 -14.754 63.239 Z" />
+                    <path fill="#FBBC05" d="M -21.484 53.529 C -21.734 52.809 -21.864 52.039 -21.864 51.239 C -21.864 50.439 -21.724 49.669 -21.484 48.949 L -21.484 45.859 L -25.464 45.859 C -26.284 47.479 -26.754 49.299 -26.754 51.239 C -26.754 53.179 -26.284 54.999 -25.464 56.619 L -21.484 53.529 Z" />
+                    <path fill="#EA4335" d="M -14.754 43.989 C -12.984 43.989 -11.404 44.599 -10.154 45.789 L -6.734 42.369 C -8.804 40.429 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z" />
                   </g>
                 </svg>
                 Sign up with Google
-              </button>
+              </motion.button>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </>
   );
 };
 
 export default function SignUp() {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <Link href="/">
-          <h2 className="text-center text-3xl font-extrabold text-gray-900">
-            <span className="font-medium">Periskope</span>
-          </h2>
-        </Link>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Create a new account
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Or{' '}
-          <Link href="/signin" className="font-medium text-black hover:text-gray-800">
-            sign in to your account
-          </Link>
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      {/* Background Effects */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-green-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
       </div>
-      
+
+      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <Link href="/" className="flex justify-center items-center space-x-2 mb-6">
+            <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
+                <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
+              </svg>
+            </div>
+            <span className="text-2xl font-bold text-white">periskope</span>
+          </Link>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <h2 className="text-center text-3xl font-bold text-white">
+            Create a new account
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-400">
+            Or{' '}
+            <Link href="/signin" className="font-medium text-green-400 hover:text-green-300 transition-colors">
+              sign in to your account
+            </Link>
+          </p>
+        </motion.div>
+      </div>
+
       <Suspense fallback={
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 flex justify-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-black"></div>
+          <div className="bg-gray-800 py-8 px-4 shadow-xl rounded-2xl border border-gray-700 sm:px-10 flex justify-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-green-500"></div>
           </div>
         </div>
       }>
@@ -278,4 +348,4 @@ export default function SignUp() {
       </Suspense>
     </div>
   );
-} 
+}
