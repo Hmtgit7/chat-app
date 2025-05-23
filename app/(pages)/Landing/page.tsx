@@ -2,26 +2,19 @@
 import Header from "@/app/components/Landing/Header"
 import Hero from "@/app/components/Landing/Hero"
 import Features from "@/app/components/Landing/Features"
-import Howitworks from "@/app/components/Landing/Howitworks"
-import Pricing from "@/app/components/Landing/Pricing"
+import CaseStudies from "@/app/components/Landing/CaseStudies"
+import Integrations from "@/app/components/Landing/Integrations"
 import Footer from "@/app/components/Landing/Footer"
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-900">
       <Header />
       <main>
         <Hero />
-        <div className="mt-20">
-          <Features />
-        </div>
-        <div className="mt-20">
-          <Howitworks />
-        </div>
-        {/* <div className="mt-20">
-          <Pricing />
-        </div> */}
-        {/* Add more landing page sections here as needed */}
+        <Features />
+        <CaseStudies />
+        <Integrations />
       </main>
       <Footer />
     </div>
