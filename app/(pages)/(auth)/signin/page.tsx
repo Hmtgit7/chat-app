@@ -1,11 +1,11 @@
 // chat-app/app/(pages)/(auth)/signin/page.tsx
 "use client";
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Client component that uses useSearchParams
 const SignInForm = () => {
@@ -21,28 +21,22 @@ const SignInForm = () => {
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/chats';
+  const callbackUrl = searchParams?.get('callbackUrl') || '/chats';
 
   // Check if we have a verification success parameter
-  const verificationSuccess = searchParams.get('verified') === 'true';
+  const verificationSuccess = searchParams?.get('verified') === 'true';
 
   // Show verification success toast
-  React.useEffect(() => {
+  useEffect(() => {
     if (verificationSuccess) {
       setToastType('success');
       setToastMessage('Email verified successfully! You can now sign in.');
       setShowToast(true);
-
-      const timer = setTimeout(() => {
-        setShowToast(false);
-      }, 5000);
-
-      return () => clearTimeout(timer);
     }
   }, [verificationSuccess]);
 
   // Handle toast auto-hide
-  React.useEffect(() => {
+  useEffect(() => {
     if (showToast) {
       const timer = setTimeout(() => {
         setShowToast(false);
@@ -59,10 +53,15 @@ const SignInForm = () => {
       ...prev,
       [name]: value
     }));
+    // Clear error when user starts typing
+    if (error) setError('');
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (loading) return; // Prevent double submission
+
     setLoading(true);
     setError('');
 
@@ -79,7 +78,7 @@ const SignInForm = () => {
         setToastMessage(result.error);
         setShowToast(true);
         setError(result.error);
-      } else {
+      } else if (result?.ok) {
         setToastType('success');
         setToastMessage('Sign in successful! Redirecting...');
         setShowToast(true);
@@ -90,6 +89,7 @@ const SignInForm = () => {
         }, 1000);
       }
     } catch (err) {
+      console.error('Sign in error:', err);
       setToastType('error');
       setToastMessage('An unexpected error occurred');
       setShowToast(true);
@@ -99,50 +99,65 @@ const SignInForm = () => {
     }
   };
 
-  const handleGoogleSignIn = () => {
-    signIn('google', { callbackUrl });
+  const handleGoogleSignIn = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      await signIn('google', { callbackUrl });
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      setToastType('error');
+      setToastMessage('Google sign in failed');
+      setShowToast(true);
+    }
   };
 
   return (
     <>
       {/* Toast notification */}
-      {showToast && (
-        <motion.div
-          className={`fixed top-5 right-5 p-4 rounded-lg shadow-xl z-50 ${toastType === 'success' ? 'bg-green-600 text-white' :
-            toastType === 'error' ? 'bg-red-600 text-white' :
-              'bg-blue-600 text-white'
-            }`}
-          initial={{ opacity: 0, y: -50, x: 50 }}
-          animate={{ opacity: 1, y: 0, x: 0 }}
-          exit={{ opacity: 0, y: -50, x: 50 }}
-        >
-          <div className="flex items-center">
-            <div className="flex-shrink-0 mr-3">
-              {toastType === 'success' && (
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            className={`fixed top-5 right-5 p-4 rounded-lg shadow-xl z-50 max-w-sm ${toastType === 'success' ? 'bg-green-600 text-white' :
+                toastType === 'error' ? 'bg-red-600 text-white' :
+                  'bg-blue-600 text-white'
+              }`}
+            initial={{ opacity: 0, y: -50, x: 50 }}
+            animate={{ opacity: 1, y: 0, x: 0 }}
+            exit={{ opacity: 0, y: -50, x: 50 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="flex items-center">
+              <div className="flex-shrink-0 mr-3">
+                {toastType === 'success' && (
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                )}
+                {toastType === 'error' && (
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                )}
+                {toastType === 'info' && (
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
+              <p className="text-sm font-medium flex-1">{toastMessage}</p>
+              <button
+                onClick={() => setShowToast(false)}
+                className="ml-4 text-white hover:text-gray-200 flex-shrink-0"
+                type="button"
+              >
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
-              )}
-              {toastType === 'error' && (
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              )}
-              {toastType === 'info' && (
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
-                </svg>
-              )}
+              </button>
             </div>
-            <p className="text-sm font-medium">{toastMessage}</p>
-            <button onClick={() => setShowToast(false)} className="ml-4 text-white hover:text-gray-200">
-              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </button>
-          </div>
-        </motion.div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <motion.div
         className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
@@ -151,54 +166,53 @@ const SignInForm = () => {
         transition={{ duration: 0.6 }}
       >
         <div className="bg-gray-800 py-8 px-4 shadow-xl rounded-2xl border border-gray-700 sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-6" onSubmit={handleSubmit} noValidate>
             {error && (
               <motion.div
                 className="bg-red-900/50 border border-red-500 text-red-300 px-4 py-3 rounded-lg relative"
                 role="alert"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
               >
                 <span className="block sm:inline">{error}</span>
               </motion.div>
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
                 Email address
               </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="appearance-none block w-full px-3 py-3 border border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 sm:text-sm bg-gray-700 text-white"
-                  placeholder="Enter your email"
-                />
-              </div>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={formData.email}
+                onChange={handleInputChange}
+                disabled={loading}
+                className="appearance-none block w-full px-3 py-3 border border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 sm:text-sm bg-gray-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                placeholder="Enter your email"
+              />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
                 Password
               </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className="appearance-none block w-full px-3 py-3 border border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 sm:text-sm bg-gray-700 text-white"
-                  placeholder="Enter your password"
-                />
-              </div>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={formData.password}
+                onChange={handleInputChange}
+                disabled={loading}
+                className="appearance-none block w-full px-3 py-3 border border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 sm:text-sm bg-gray-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                placeholder="Enter your password"
+              />
             </div>
 
             <div className="flex items-center justify-between">
@@ -215,9 +229,9 @@ const SignInForm = () => {
               </div>
 
               <div className="text-sm">
-                <a href="#" className="font-medium text-green-400 hover:text-green-300">
+                <Link href="/forgot-password" className="font-medium text-green-400 hover:text-green-300 transition-colors">
                   Forgot your password?
-                </a>
+                </Link>
               </div>
             </div>
 
@@ -225,7 +239,7 @@ const SignInForm = () => {
               <motion.button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 whileHover={{ scale: loading ? 1 : 1.02 }}
                 whileTap={{ scale: loading ? 1 : 0.98 }}
               >
@@ -255,9 +269,11 @@ const SignInForm = () => {
             <div className="mt-6">
               <motion.button
                 onClick={handleGoogleSignIn}
-                className="w-full flex justify-center items-center py-3 px-4 border border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 transition-colors"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                type="button"
+                disabled={loading}
+                className="w-full flex justify-center items-center py-3 px-4 border border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                whileHover={{ scale: loading ? 1 : 1.02 }}
+                whileTap={{ scale: loading ? 1 : 0.98 }}
               >
                 <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
                   <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">
@@ -277,11 +293,20 @@ const SignInForm = () => {
   );
 };
 
+// Loading fallback component
+const LoadingFallback = () => (
+  <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+    <div className="bg-gray-800 py-8 px-4 shadow-xl rounded-2xl border border-gray-700 sm:px-10 flex justify-center">
+      <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-green-500"></div>
+    </div>
+  </div>
+);
+
 export default function SignIn() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       {/* Background Effects */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-green-500/10 rounded-full blur-3xl"></div>
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
       </div>
@@ -292,8 +317,8 @@ export default function SignIn() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <Link href="/" className="flex justify-center items-center space-x-2 mb-6">
-            <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+          <Link href="/" className="flex justify-center items-center space-x-2 mb-6 group">
+            <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center group-hover:bg-green-600 transition-colors">
               <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
                 <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
@@ -320,13 +345,7 @@ export default function SignIn() {
         </motion.div>
       </div>
 
-      <Suspense fallback={
-        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-gray-800 py-8 px-4 shadow-xl rounded-2xl border border-gray-700 sm:px-10 flex justify-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-green-500"></div>
-          </div>
-        </div>
-      }>
+      <Suspense fallback={<LoadingFallback />}>
         <SignInForm />
       </Suspense>
     </div>
